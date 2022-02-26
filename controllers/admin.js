@@ -1,7 +1,7 @@
 const Product = require('../models/product');
 
 exports.getAddProduct = (req, res, next) => {
-    res.render('add-product', {
+    res.render('admin/add-product', {
         pageTitle: 'Add Product',
         path: '/admin/add-product',
         formsCSS: true,
@@ -16,15 +16,12 @@ exports.postAddProduct = (req, res, next) => {
     res.redirect('/');
 };
 
-exports.getProduct = (req, res, next) => {
-    Product.fetchAll(products => { //product hanya nama parameter bisa diubah menjadi apapun
-        res.render('shop', {
+exports.getProducts = (req, res, next) => {
+    Product.fetchAll(products => {
+        res.render('admin/products', {
             prods: products,
-            pageTitle: 'Shop',
-            path: '/',
-            hasProducts: products.length > 0,
-            activeShop: true,
-            productCSS: true
+            pageTitle: 'Admin Products',
+            path: '/admin/products'
         });
-    })
-}
+    });
+};
