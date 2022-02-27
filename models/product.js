@@ -14,15 +14,18 @@ const getProductsFromFile = cb => {
 }
 
 module.exports = class Product {
-    constructor(t) {
+    constructor(title, imageUrl, description, price) {
         //this.title mengambil data dari title yang dikirim dari form name="title" pada views/add-product.ejs
         //jika this.title dirubah menjadi this.apapun, maka data yang dikirim dari form name="title" 
         //tidak muncul
-        this.title = t;
+        this.title = title;
+        this.imageUrl = imageUrl;
+        this.description = description;
+        this.price = price;
     }
 
     save() {
-        getProductsFromFile(products => {
+        getProductsFromFile(products => { //products hanya nama parameter bisa diubah menjadi apapun
             products.push(this);
             fs.writeFile(p, JSON.stringify(products), err => {
                 console.log(err);
