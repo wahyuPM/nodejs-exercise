@@ -1,5 +1,5 @@
 const Product = require('../models/product');
-const Cart = require('../models/cart');
+// const Order = require('../models/order');
 
 exports.getProducts = (req, res, next) => {
   Product.findAll()
@@ -73,27 +73,27 @@ exports.postCart = (req, res, next) => {
   let fetchedCart;
   req.user.getCart() //
     .then(cart => {
-      fetchedCart = cart;
+      fetchedCart = cart; // mengambil data cart berdasarkan user
       // console.log(cart);
-      return cart.getProducts({ where: { id: prodId } }) // cek apakah product sudah ada di cart
+      return cart.getProducts({ where: { id: prodId } }) // cek apakah product sudah ada di cartitems
     })
     .then(products => {
       let product;
       if (products.length > 0) {
-        product = products[0]; // jika product sudah ada di cart, maka ambil product tersebut
+        product = products[0]; // jika product sudah ada di cartitems, maka ambil product tersebut
       }
       let newQuantity = 1;
-      if (product) { // jika product sudah ada di cart, maka tambahkan quantity
+      if (product) { // jika product sudah ada di cartitems, maka tambahkan quantity
         const oldQuantity = product.cartItem.quantity;
         newQuantity = oldQuantity + 1;
         return fetchedCart.addProduct(product, {
           through: { quantity: newQuantity }
         });
       }
-      // jika product belum ada di cart, maka tambahkan product baru ke cart
+      // jika product belum ada di cartitems, maka tambahkan product baru ke cartitems
       return Product.findByPk(prodId) // mengambil data product berdasarkan id pada tabel product
         .then(product => {
-          return fetchedCart.addProduct(product, { // menambahkan product baru ke cart
+          return fetchedCart.addProduct(product, { // menambahkan product baru ke cartitems
             through: {
               quantity: newQuantity // menambahkan quantity default 1
             }
@@ -124,16 +124,40 @@ exports.postCartDeleteProduct = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.getOrders = (req, res, next) => {
-  res.render('shop/orders', {
-    path: '/orders',
-    pageTitle: 'Your Orders'
-  });
-};
+exports.postOrder = (req, res, next) => {
+  let fetchedCart;
+  req.user.getCart()
+    .then(cart => {
+      fetchedCart = cart;
+      return cart.getProducts()
+    })
+    .then(products => {
+      return req.user.createOrder()
+        .then(order => {
+          order.addProducts(products.map(product => { // menambahkan product ke order (tabel orderitems) berdasarkan product yang ada di cartitems
+            product.orderItem = { quantity: product.cartItem.quantity }; // menambahkan quantity product ke orderitems
+            return product;
+          }));
+        })
+        .catch(err => console.log(err));
+    })
+    .then(result => {
+      return fetchedCart.setProducts(null); // mengosongkan cartitems
+    })
+    .then(result => {
+      res.redirect('/orders');
+    })
+    .catch(err => console.log(err));
+}
 
-exports.getCheckout = (req, res, next) => {
-  res.render('shop/checkout', {
-    path: '/checkout',
-    pageTitle: 'Checkout'
-  });
+exports.getOrders = (req, res, next) => {
+  req.user.getOrders({ include: ['products'] })
+    .then(orders => {
+      res.render('shop/orders', {
+        path: '/orders',
+        pageTitle: 'Your Orders',
+        orders: orders
+      });
+    })
+    .catch(err => console.log(err));
 };
